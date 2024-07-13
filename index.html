@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sensor Data Dashboard</title>
+    <!-- Bootstrap CSS CDN -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        .sensor-box {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+            background-color: #f8f9fa;
+            text-align: center;
+        }
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 10vh;
+            width: 10vh;
+        }
+        .chart-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .sensor-icon {
+            font-size: 3vh;
+        }
+    </style>
+</head>
+<body>
+   
+    <div class="container">
+        <h1 class="text-center my-4">Sensor Data Dashboard</h1>
+        <div class="row justify-content-center">
+            <div class="col-md-6 sensor-box">
+                <h3><i class="bi bi-droplet-half sensor-icon"></i> PH Air</h3>
+                <div class="chart-container">
+                    <canvas id="phChart"></canvas>
+                    <div id="phValue" class="chart-value">0</div>
+                </div>
+                <p id="phLabel" class="mt-3"><span style="font-weight: 900;
+                    box-sizing: border-box;
+                    font-family: monospace;
+                    font-size: 2vh;" id="phLabelValue">-</span></p>
+            </div>
+            <div class="col-md-6 sensor-box">
+                <h3><i class="bi bi-lightbulb sensor-icon"></i> Cahaya</h3>
+                <div class="chart-container">
+                    <canvas id="ldrChart"></canvas>
+                    <div id="ldrValue" class="chart-value">0</div>
+                </div>
+            </div>
+            <div class="col-md-6 sensor-box">
+                <h3><i class="bi bi-thermometer-low sensor-icon"></i> Temperature</h3>
+                <p id="tempValue">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies CDN -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- JavaScript to fetch and update sensor data -->
+    <script>
+        let phChart, ldrChart;
+
+        function createDonutChart(ctx, label, maxValue) {
+            return new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    datasets: [{
+                        data: [0, maxValue],
+                        backgroundColor: ['#007bff', '#e9ecef'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    cutout: '80%',
+                    plugins: {
+                        tooltip: {
+                            enabled: false
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateDonutChart(chart, value, maxValue) {
+            chart.data.datasets[0].data[0] = value;
+            chart.data.datasets[0].data[1] = maxValue - value;
+            chart.update();
+        }
+
+        function fetchSensorData() {
+            // Replace with your ThingSpeak Channel ID and Read API Key
+            const channelId = '2598531';
+            const readApiKey = 'L7P8FA5OKA23FA42';
+            const url = `https://api.thingspeak.com/channels/${channelId}/feeds.json?api_key=${readApiKey}&results=1`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    const latestFeed = data.feeds[0];
+                    
+                    // pH Sensor Update
+                    const phValue = parseFloat(latestFeed.field1);
+                    document.getElementById('phValue').innerText = phValue;
+                    updateDonutChart(phChart, phValue, 1024);
+
+                    // Determine pH Label
+                    let pH_label;
+                    if (phValue >= 1 && phValue <= 73) {
+                        pH_label = "ph1";
+                    } else if (phValue >= 74 && phValue <= 146) {
+                        pH_label = "ph2";
+                    } else if (phValue >= 147 && phValue <= 219) {
+                        pH_label = "ph3";
+                    } else if (phValue >= 220 && phValue <= 292) {
+                        pH_label = "ph4";
+                    } else if (phValue >= 293 && phValue <= 365) {
+                        pH_label = "ph5";
+                    } else if (phValue >= 366 && phValue <= 438) {
+                        pH_label = "ph6";
+                    } else if (phValue >= 439 && phValue <= 511) {
+                        pH_label = "ph7";
+                    } else if (phValue >= 512 && phValue <= 584) {
+                        pH_label = "ph8";
+                    } else if (phValue >= 585 && phValue <= 657) {
+                        pH_label = "ph9";
+                    } else if (phValue >= 658 && phValue <= 730) {
+                        pH_label = "ph10";
+                    } else if (phValue >= 731 && phValue <= 803) {
+                        pH_label = "ph11";
+                    } else if (phValue >= 804 && phValue <= 876) {
+                        pH_label = "ph12";
+                    } else if (phValue >= 877 && phValue <= 949) {
+                        pH_label = "ph13";
+                    } else if (phValue >= 950 && phValue <= 1022) {
+                        pH_label = "ph14";
+                    } else {
+                        pH_label = "out of range";
+                    }
+
+                    // Update pH Label on the UI
+                    document.getElementById('phLabelValue').innerText = pH_label;
+
+                    // LDR Sensor Update
+                    const ldrValue = parseFloat(latestFeed.field2);
+                    document.getElementById('ldrValue').innerText = ldrValue;
+                    updateDonutChart(ldrChart, ldrValue, 1024);
+
+                    // Temperature Update (only digits)
+                    document.getElementById('tempValue').innerText = parseFloat(latestFeed.field3).toFixed(0);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Create donut charts
+            const phCtx = document.getElementById('phChart').getContext('2d');
+            phChart = createDonutChart(phCtx, 'pH', 1024);
+
+            const ldrCtx = document.getElementById('ldrChart').getContext('2d');
+            ldrChart = createDonutChart(ldrCtx, 'LDR', 1024);
+
+            // Fetch sensor data every 15 seconds
+            setInterval(fetchSensorData, 5000);
+
+            // Initial fetch
+            fetchSensorData();
+        });
+    </script>
+</body>
+</html>
